@@ -2,10 +2,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict
 from typing import List, Dict, Any
 
-### Create FastAPI instance with custom docs and openapi url
 app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
 
-# 定义固定的卡片配置
 PLAYER_A_CARDS = [
     {"insect": "a-1", "score": 1, "image": "a-1.png"},
     {"insect": "a-2", "score": 2, "image": "a-2.png"},
@@ -55,15 +53,15 @@ async def compare_cards(card_a: dict, card_b: dict):
     
     if score_a > score_b:
         round_result["winner"] = "A"
-        round_result["result"] = "玩家A获胜!"
+        round_result["result"] = "Player 1 wins!"
         points = 1
     elif score_b > score_a:
         round_result["winner"] = "B"
-        round_result["result"] = "玩家B获胜!"
+        round_result["result"] = "Player 2 wins!"
         points = 1
     else:
-        round_result["winner"] = "平局"
-        round_result["result"] = "平局!"
+        round_result["winner"] = "Deuce"
+        round_result["result"] = "Deuce!"
         points = 0
         
     return round_result
@@ -74,11 +72,11 @@ async def calculate_final_result(round_results: List[dict]):
     player_b_score = sum(1 for r in round_results if r["winner"] == "B")
     
     if player_a_score > player_b_score:
-        final_result = f"游戏结束! 玩家A获胜! (得分 {player_a_score}:{player_b_score})"
+        final_result = f"Game over! Player 1 wins! (Score {player_a_score}:{player_b_score})"
     elif player_b_score > player_a_score:
-        final_result = f"游戏结束! 玩家B获胜! (得分 {player_a_score}:{player_b_score})"
+        final_result = f"Game over! Player 2 wins! (Score {player_a_score}:{player_b_score})"
     else:
-        final_result = f"游戏结束! 平局! (得分 {player_a_score}:{player_b_score})"
+        final_result = f"Game over! Deuce! (Score {player_a_score}:{player_b_score})"
         
     return {
         "final_result": final_result,

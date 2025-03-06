@@ -85,10 +85,10 @@ export default function Home() {
 
   const calculateFinalResult = () => {
     const finalResult = gameState.player_a_score > gameState.player_b_score 
-      ? '玩家A获胜！' 
+      ? 'Player 1 wins' 
       : gameState.player_b_score > gameState.player_a_score 
-        ? '玩家B获胜！' 
-        : '平局！';
+        ? 'Player 2 wins' 
+        : 'Deuce';
     
     setGameState(prev => ({
       ...prev,
@@ -103,12 +103,12 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col p-4">
-      {/* 玩家 A 区域 - 上半部分 */}
+      {/* Part 1 */}
       <div className="flex-1 mb-4">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg min-h-[45vh]">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">玩家 A ({gameState.player_a_cards.length}张剩余)</h2>
-            <div className="text-lg font-bold">得分: {gameState.player_a_score}</div>
+            <h2 className="text-xl font-bold">Player 1 </h2>
+            <div className="text-lg font-bold">Score: {gameState.player_a_score}</div>
           </div>
           <div className="overflow-visible flex items-center justify-center h-full">
             <div className="flex flex-wrap gap-4 justify-center">
@@ -126,7 +126,7 @@ export default function Home() {
                   <div className={`relative w-[100px] h-[152.6px] bg-white rounded-lg overflow-hidden`}>
                     <Image
                       src={`/${card.image}`}
-                      alt={`昆虫 ${card.insect}`}
+                      alt={`Insect ${card.insect}`}
                       fill
                       className="object-cover rounded-xl"
                     />
@@ -138,7 +138,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 中间控制区域 */}
+      {/* Middle */}
       <div className="flex flex-col items-center gap-4 my-2">
         <div className="text-2xl font-bold">
           {gameState.player_a_score} : {gameState.player_b_score}
@@ -151,7 +151,7 @@ export default function Home() {
               onClick={compareCards}
               disabled={!selectedCardA || !selectedCardB}
             >
-              对比卡片
+              Compare
             </button>
           )}
           {!gameState.game_over && gameState.player_a_cards.length === 0 && (
@@ -159,14 +159,14 @@ export default function Home() {
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               onClick={calculateFinalResult}
             >
-              结算游戏
+              Result
             </button>
           )}
           <button
             className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
             onClick={startNewGame}
           >
-            开始新游戏
+            New Game
           </button>
         </div>
 
@@ -177,12 +177,12 @@ export default function Home() {
         )}
       </div>
 
-      {/* 玩家 B 区域 - 下半部分 */}
+      {/* Part 2 */}
       <div className="flex-1 mt-4">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg min-h-[45vh]">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">玩家 B ({gameState.player_b_cards.length}张剩余)</h2>
-            <div className="text-lg font-bold">得分: {gameState.player_b_score}</div>
+            <h2 className="text-xl font-bold">Player 2 </h2>
+            <div className="text-lg font-bold">Score: {gameState.player_b_score}</div>
           </div>
           <div className="overflow-visible flex items-center justify-center h-full">
             <div className="flex flex-wrap gap-4 justify-center">
@@ -200,7 +200,7 @@ export default function Home() {
                   <div className={`relative w-[100px] h-[152.6px] bg-white rounded-lg overflow-hidden`}>
                     <Image
                       src={`/${card.image}`}
-                      alt={`昆虫 ${card.insect}`}
+                      alt={`Insect ${card.insect}`}
                       fill
                       className="object-cover rounded-xl"
                     />
