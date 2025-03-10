@@ -8,13 +8,6 @@ interface Card {
   image: string;
 }
 
-interface RoundResult {
-  card_a: Card;
-  card_b: Card;
-  winner: string;
-  result: string;
-}
-
 interface GameState {
   player_a_cards: Card[];
   player_b_cards: Card[];
@@ -22,6 +15,12 @@ interface GameState {
   player_a_score: number;
   player_b_score: number;
   game_over: boolean;
+  round_results: Array<{
+    card_a: Card;
+    card_b: Card;
+    winner: string;
+    result: string;
+  }>;
 }
 
 export default function Home() {
@@ -31,70 +30,68 @@ export default function Home() {
     result: '',
     player_a_score: 0,
     player_b_score: 0,
-    game_over: false
+    game_over: false,
+    round_results: []
   });
-  const [selectedCardA, setSelectedCardA] = useState<Card | null>(null);
-  const [selectedCardB, setSelectedCardB] = useState<Card | null>(null);
+  
+  const [currentCards, setCurrentCards] = useState<{
+    a: Card | null;
+    b: Card | null;
+  }>({ a: null, b: null });
 
   const startNewGame = async () => {
-    const response = await fetch('/api/py/new_game');
-    const data = await response.json();
+    const res = await fetch('/api/py/new_game');
+    const data = await res.json();
     setGameState({
       ...data,
-      result: ''
+      result: '',
+      round_results: []
     });
-    setSelectedCardA(null);
-    setSelectedCardB(null);
+    setCurrentCards({ a: null, b: null });
   };
 
-  const compareCards = async () => {
-    if (!selectedCardA || !selectedCardB) return;
+  const playRound = async () => {
+    if (gameState.game_over || gameState.player_a_cards.length === 0) return;
 
-    const response = await fetch('/api/py/compare', {
+    const getRandomCard = (cards: Card[]) => 
+      cards[Math.floor(Math.random() * cards.length)];
+    
+    const cardA = getRandomCard(gameState.player_a_cards);
+    const cardB = getRandomCard(gameState.player_b_cards);
+
+    setCurrentCards({ a: cardA, b: cardB });
+
+    const res = await fetch('/api/py/compare', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        card_a: selectedCardA,
-        card_b: selectedCardB
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_a: cardA, card_b: cardB }),
     });
-    const roundResult = await response.json();
-    
-    setGameState(prev => ({
-      ...prev,
-      result: roundResult.result,
-      player_a_cards: prev.player_a_cards.filter(card => card.insect !== selectedCardA.insect),
-      player_b_cards: prev.player_b_cards.filter(card => card.insect !== selectedCardB.insect),
-      player_a_score: roundResult.winner === 'A' 
-        ? prev.player_a_score + 1 
-        : roundResult.winner === 'draw' 
-          ? prev.player_a_score + 1 
-          : prev.player_a_score,
-      player_b_score: roundResult.winner === 'B' 
-        ? prev.player_b_score + 1 
-        : roundResult.winner === 'draw' 
-          ? prev.player_b_score + 1 
-          : prev.player_b_score,
-    }));
-    
-    setSelectedCardA(null);
-    setSelectedCardB(null);
-  };
+    const result = await res.json();
 
-  const calculateFinalResult = () => {
-    const finalResult = gameState.player_a_score > gameState.player_b_score 
-      ? 'Player 1 wins' 
-      : gameState.player_b_score > gameState.player_a_score 
-        ? 'Player 2 wins' 
-        : 'Deuce';
-    
-    setGameState(prev => ({
-      ...prev,
-      result: finalResult,
-      game_over: true
-    }));
+    setGameState(prev => {
+      const newState = {
+        ...prev,
+        player_a_cards: prev.player_a_cards.filter(c => c !== cardA),
+        player_b_cards: prev.player_b_cards.filter(c => c !== cardB),
+        round_results: [...prev.round_results, result],
+        player_a_score: result.winner === 'A' ? prev.player_a_score + 1 : prev.player_a_score,
+        player_b_score: result.winner === 'B' ? prev.player_b_score + 1 : prev.player_b_score,
+        result: result.result,
+        game_over: prev.player_a_cards.length === 1
+      };
+
+      if (newState.game_over) {
+        fetch('/api/py/calculate_final', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newState.round_results)
+        }).then(r => r.json())
+          .then(({ result }) => {
+            setGameState(p => ({ ...p, result }));
+          });
+      }
+      return newState;
+    });
   };
 
   useEffect(() => {
@@ -102,112 +99,89 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col p-4">
-      {/* Part 1 */}
-      <div className="flex-1 mb-4">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg min-h-[45vh]">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Player 1 </h2>
-            <div className="text-lg font-bold">Score: {gameState.player_a_score}</div>
-          </div>
-          <div className="overflow-visible flex items-center justify-center h-full">
-            <div className="flex flex-wrap gap-4 justify-center">
-              {gameState.player_a_cards.map((card, index) => (
-                <button
-                  key={index}
-                  className={`p-2 rounded-lg transition-all relative ${
-                    selectedCardA === card 
-                      ? 'ring-4 ring-blue-600 ring-offset-2 -translate-y-2' 
-                      : 'hover:-translate-y-1 hover:ring-2 hover:ring-blue-400 hover:ring-offset-1'
-                  }`}
-                  onClick={() => setSelectedCardA(card)}
-                  disabled={gameState.game_over}
-                >
-                  <div className={`relative w-[100px] h-[152.6px] bg-white rounded-lg overflow-hidden`}>
-                    <Image
-                      src={`/${card.image}`}
-                      alt={`Insect ${card.insect}`}
-                      fill
-                      className="object-cover rounded-xl"
-                    />
-                  </div>
-                </button>
-              ))}
+    <main className="flex min-h-screen p-4 gap-6 bg-slate-100 dark:bg-slate-900">
+      {/* Left */}
+      <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 rounded-xl p-4 shadow-xl">
+        <div className="flex justify-between mb-4">
+          <h2 className="text-xl font-bold">Player 1</h2>
+          <div className="font-mono text-lg">Score: {gameState.player_a_score}</div>
+        </div>
+        
+        <div className="flex-1 flex flex-col items-center gap-4">
+          {currentCards.a && (
+            <div className="relative w-24 h-36 animate-card-flip">
+              <Image
+                src={`/${currentCards.a.image}`}
+                alt={currentCards.a.insect}
+                fill
+                className="object-cover rounded-md"
+              />
             </div>
+          )}
+          
+          <div className="flex flex-wrap gap-2 justify-center">
+            {gameState.player_a_cards.map((_, i) => (
+              <div key={i} className="w-20 h-28 bg-slate-200 rounded-md border-2 border-dashed border-slate-400" />
+            ))}
           </div>
         </div>
       </div>
 
       {/* Middle */}
-      <div className="flex flex-col items-center gap-4 my-2">
-        <div className="text-2xl font-bold">
-          {gameState.player_a_score} : {gameState.player_b_score}
-        </div>
-        
-        <div className="flex gap-4">
-          {!gameState.game_over && gameState.player_a_cards.length > 0 && (
-            <button
-              className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-              onClick={compareCards}
-              disabled={!selectedCardA || !selectedCardB}
-            >
-              Compare
-            </button>
-          )}
-          {!gameState.game_over && gameState.player_a_cards.length === 0 && (
-            <button
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              onClick={calculateFinalResult}
-            >
-              Result
-            </button>
-          )}
-          <button
-            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-            onClick={startNewGame}
-          >
-            New Game
-          </button>
-        </div>
-
-        {gameState.result && (
-          <div className="text-center text-xl font-bold p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-            {gameState.result}
+      <div className="w-72 flex flex-col gap-4 justify-center">
+        <div className="text-center">
+          <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-6">
+            {gameState.player_a_score} : {gameState.player_b_score}
           </div>
-        )}
+          
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={playRound}
+              disabled={gameState.game_over || gameState.player_a_cards.length === 0}
+              className="py-3 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all"
+            >
+              {gameState.game_over ? 'Game Over' : `Play Round (${gameState.player_a_cards.length})`}
+            </button>
+            
+            <button
+              onClick={startNewGame}
+              className="py-2 px-4 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+            >
+              New Game
+            </button>
+          </div>
+
+          {gameState.result && (
+            <div className="mt-6 p-3 bg-white dark:bg-slate-800 rounded-lg text-center animate-fade-in">
+              <span className="font-bold text-lg">{gameState.result}</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Part 2 */}
-      <div className="flex-1 mt-4">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg min-h-[45vh]">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Player 2 </h2>
-            <div className="text-lg font-bold">Score: {gameState.player_b_score}</div>
-          </div>
-          <div className="overflow-visible flex items-center justify-center h-full">
-            <div className="flex flex-wrap gap-4 justify-center">
-              {gameState.player_b_cards.map((card, index) => (
-                <button
-                  key={index}
-                  className={`p-2 rounded-lg transition-all relative ${
-                    selectedCardB === card 
-                      ? 'ring-4 ring-blue-600 ring-offset-2 -translate-y-2' 
-                      : 'hover:-translate-y-1 hover:ring-2 hover:ring-blue-400 hover:ring-offset-1'
-                  }`}
-                  onClick={() => setSelectedCardB(card)}
-                  disabled={gameState.game_over}
-                >
-                  <div className={`relative w-[100px] h-[152.6px] bg-white rounded-lg overflow-hidden`}>
-                    <Image
-                      src={`/${card.image}`}
-                      alt={`Insect ${card.insect}`}
-                      fill
-                      className="object-cover rounded-xl"
-                    />
-                  </div>
-                </button>
-              ))}
+      {/* Right */}
+      <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 rounded-xl p-4 shadow-xl">
+        <div className="flex justify-between mb-4">
+          <h2 className="text-xl font-bold">Player 2</h2>
+          <div className="font-mono text-lg">Score: {gameState.player_b_score}</div>
+        </div>
+        
+        <div className="flex-1 flex flex-col items-center gap-4">
+          {currentCards.b && (
+            <div className="relative w-24 h-36 animate-card-flip">
+              <Image
+                src={`/${currentCards.b.image}`}
+                alt={currentCards.b.insect}
+                fill
+                className="object-cover rounded-md"
+              />
             </div>
+          )}
+          
+          <div className="flex flex-wrap gap-2 justify-center">
+            {gameState.player_b_cards.map((_, i) => (
+              <div key={i} className="w-20 h-28 bg-slate-200 rounded-md border-2 border-dashed border-slate-400" />
+            ))}
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from typing import List, Dict, Any
+import random
 
 app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
 
@@ -19,8 +20,6 @@ PLAYER_B_CARDS = [
 ]
 
 class GameState(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    
     player_a_cards: List[Dict[str, Any]]
     player_b_cards: List[Dict[str, Any]]
     result: str = ""
@@ -31,10 +30,9 @@ class GameState(BaseModel):
 
 @app.get("/api/py/new_game")
 def new_game():
-    print("new_game")
     return {
-        "player_a_cards": PLAYER_A_CARDS,
-        "player_b_cards": PLAYER_B_CARDS,
+        "player_a_cards": PLAYER_A_CARDS.copy(),
+        "player_b_cards": PLAYER_B_CARDS.copy(),
         "round_results": [],
         "player_a_score": 0,
         "player_b_score": 0,
@@ -46,40 +44,33 @@ async def compare_cards(card_a: dict, card_b: dict):
     score_a = card_a["score"]
     score_b = card_b["score"]
     
-    round_result = {
+    result = {
         "card_a": card_a,
         "card_b": card_b,
+        "result": "Deuce!",
+        "winner": "Deuce"
     }
     
     if score_a > score_b:
-        round_result["winner"] = "A"
-        round_result["result"] = "Player 1 wins!"
-        points = 1
+        result.update({
+            "result": "Player 1 wins!",
+            "winner": "A"
+        })
     elif score_b > score_a:
-        round_result["winner"] = "B"
-        round_result["result"] = "Player 2 wins!"
-        points = 1
-    else:
-        round_result["winner"] = "Deuce"
-        round_result["result"] = "Deuce!"
-        points = 0
-        
-    return round_result
-
-@app.post("/api/py/calculate_final_result")
-async def calculate_final_result(round_results: List[dict]):
-    player_a_score = sum(1 for r in round_results if r["winner"] == "A")
-    player_b_score = sum(1 for r in round_results if r["winner"] == "B")
+        result.update({
+            "result": "Player 2 wins!",
+            "winner": "B"
+        })
     
-    if player_a_score > player_b_score:
-        final_result = f"Game over! Player 1 wins! (Score {player_a_score}:{player_b_score})"
-    elif player_b_score > player_a_score:
-        final_result = f"Game over! Player 2 wins! (Score {player_a_score}:{player_b_score})"
-    else:
-        final_result = f"Game over! Deuce! (Score {player_a_score}:{player_b_score})"
-        
-    return {
-        "final_result": final_result,
-        "player_a_score": player_a_score,
-        "player_b_score": player_b_score
-    }
+    return result
+
+@app.post("/api/py/calculate_final")
+async def calculate_final(rounds: List[dict]):
+    a_score = sum(1 for r in rounds if r["winner"] == "A")
+    b_score = sum(1 for r in rounds if r["winner"] == "B")
+    
+    if a_score > b_score:
+        return {"result": f"Player 1 Wins! {a_score}-{b_score}"}
+    elif b_score > a_score:
+        return {"result": f"Player 2 Wins! {a_score}-{b_score}"}
+    return {"result": f"Deuce! {a_score}-{b_score}"}
