@@ -1,3 +1,4 @@
+# index.py
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict, Any
@@ -20,14 +21,14 @@ class GameState(BaseModel):
     player_b_sequence: List[Dict[str, Any]] = []
 
 BASE_CARDS = {
-    "a-1": {"insect": "a-1", "score": 1, "image": "a-1.png"},
-    "a-2": {"insect": "a-2", "score": 2, "image": "a-2.png"},
-    "a-3": {"insect": "a-3", "score": 3, "image": "a-3.png"},
-    "a-4": {"insect": "a-4", "score": 4, "image": "a-4.png"},
-    "b-1": {"insect": "b-1", "score": 1, "image": "b-1.png"},
-    "b-2": {"insect": "b-2", "score": 2, "image": "b-2.png"},
-    "b-3": {"insect": "b-3", "score": 3, "image": "b-3.png"},
-    "b-4": {"insect": "b-4", "score": 4, "image": "b-4.png"}
+    "ladybug1": {"insect": "ladybug1", "score": 1, "image": "ladybug1.png"},
+    "ladybug2": {"insect": "ladybug2", "score": 2, "image": "ladybug2.png"},
+    "ladybug3": {"insect": "ladybug3", "score": 3, "image": "ladybug3.png"},
+    "ladybug4": {"insect": "ladybug4", "score": 4, "image": "ladybug4.png"},
+    "monarch1": {"insect": "monarch1", "score": 1, "image": "monarch1.png"},
+    "monarch2": {"insect": "monarch2", "score": 2, "image": "monarch2.png"},
+    "monarch3": {"insect": "monarch3", "score": 3, "image": "monarch3.png"},
+    "monarch4": {"insect": "monarch4", "score": 4, "image": "monarch4.png"}
 }
 
 def build_deck(config: Dict[str, int]) -> List[Dict[str, Any]]:
@@ -88,13 +89,15 @@ async def play_round(state: GameState):
     new_b_deck = [c for i, c in enumerate(state.player_b_deck) if i != b_index]
     
     result = await compare_cards(card_a, card_b)
+    all_cards_used = len(new_a_deck) == 0 and len(new_b_deck) == 0
     
     return {
         "new_a_deck": new_a_deck,
         "new_b_deck": new_b_deck,
         "round_result": result,
         "used_card_a": card_a,
-        "used_card_b": card_b
+        "used_card_b": card_b,
+        "all_cards_used": all_cards_used
     }
 
 @app.post("/api/py/end_game")

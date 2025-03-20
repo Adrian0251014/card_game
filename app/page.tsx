@@ -1,3 +1,4 @@
+// page.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -26,14 +27,25 @@ interface GameState {
 }
 
 const DEFAULT_CONFIG = {
-  "a-1": 1,
-  "a-2": 1,
-  "a-3": 1,
-  "a-4": 1,
-  "b-1": 1,
-  "b-2": 1,
-  "b-3": 1,
-  "b-4": 1
+  "ladybug1": 1,
+  "ladybug2": 1,
+  "ladybug3": 1,
+  "ladybug4": 1,
+  "monarch1": 1,
+  "monarch2": 1,
+  "monarch3": 1,
+  "monarch4": 1
+};
+
+const CARD_REFERENCE = {
+  "ladybug1": { score: 1, image: "ladybug1.png" },
+  "ladybug2": { score: 2, image: "ladybug2.png" },
+  "ladybug3": { score: 3, image: "ladybug3.png" },
+  "ladybug4": { score: 4, image: "ladybug4.png" },
+  "monarch1": { score: 1, image: "monarch1.png" },
+  "monarch2": { score: 2, image: "monarch2.png" },
+  "monarch3": { score: 3, image: "monarch3.png" },
+  "monarch4": { score: 4, image: "monarch4.png" }
 };
 
 export default function Home() {
@@ -55,6 +67,37 @@ export default function Home() {
     b: Card | null;
   }>({ a: null, b: null });
   const [showConfig, setShowConfig] = useState(true);
+  const [showReference, setShowReference] = useState(false);
+
+  const ReferenceModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white p-6 rounded-xl w-full max-w-4xl">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Card Reference</h2>
+          <button
+            onClick={() => setShowReference(false)}
+            className="text-gray-500 hover:text-gray-700 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Object.entries(CARD_REFERENCE).map(([name, info]) => (
+            <div key={name} className="flex flex-col items-center p-2 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="relative w-full aspect-[3/4] max-w-[150px]">
+                <Image
+                  src={`/${info.image}`}
+                  alt={name}
+                  fill
+                  className="object-cover rounded-md"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   const startNewGame = async () => {
     const res = await fetch('/api/py/new_game', {
@@ -63,7 +106,13 @@ export default function Home() {
       body: JSON.stringify({ common_deck: config })
     });
     const data = await res.json();
-    setGameState(data);
+    
+    setGameState({
+      ...data,
+      result: '',
+      round_results: []
+    });
+    setCurrentCards({ a: null, b: null });
     setShowConfig(false);
   };
 
@@ -74,25 +123,38 @@ export default function Home() {
       body: JSON.stringify(gameState)
     });
     
-    const { new_a_deck, new_b_deck, round_result, used_card_a, used_card_b } = await res.json();
+    const { new_a_deck, new_b_deck, round_result, used_card_a, used_card_b, all_cards_used } = await res.json();
     
     setCurrentCards({
       a: used_card_a,
       b: used_card_b
     });
 
-    setGameState(prev => ({
-      ...prev,
+    let newState = {
+      ...gameState,
       player_a_deck: new_a_deck,
       player_b_deck: new_b_deck,
-      player_a_score: round_result?.winner === 'A' ? prev.player_a_score + 1 : prev.player_a_score,
-      player_b_score: round_result?.winner === 'B' ? prev.player_b_score + 1 : prev.player_b_score,
-      round_results: [...prev.round_results, round_result],
-      game_over: new_a_deck.length === 0 || new_b_deck.length === 0,
-      result: round_result?.result || prev.result,
-      player_a_sequence: [...prev.player_a_sequence, used_card_a],
-      player_b_sequence: [...prev.player_b_sequence, used_card_b]
-    }));
+      player_a_score: round_result?.winner === 'A' ? gameState.player_a_score + 1 : gameState.player_a_score,
+      player_b_score: round_result?.winner === 'B' ? gameState.player_b_score + 1 : gameState.player_b_score,
+      round_results: [...gameState.round_results, round_result],
+      game_over: all_cards_used,
+      result: round_result?.result || gameState.result,
+      player_a_sequence: [...gameState.player_a_sequence, used_card_a],
+      player_b_sequence: [...gameState.player_b_sequence, used_card_b]
+    };
+
+    if (all_cards_used) {
+      const finalRes = await fetch('/api/py/end_game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newState)
+      });
+      const finalData = await finalRes.json();
+      newState.result = finalData.result;
+      newState.game_over = true;
+    }
+
+    setGameState(newState);
   };
 
   const endGame = async () => {
@@ -195,20 +257,34 @@ export default function Home() {
                   disabled={gameState.game_over}
                   className="py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
-                  End Game
+                  End Game Early
                 </button>
 
                 <button
-                  onClick={() => setShowConfig(true)}
+                  onClick={() => {
+                    setShowConfig(true);
+                    setCurrentCards({ a: null, b: null });
+                  }}
                   className="py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                 >
-                  Restart
+                  Reconfigure
+                </button>
+
+                <button
+                  onClick={() => setShowReference(true)}
+                  className="py-2 px-4 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                >
+                  Show Reference
                 </button>
               </div>
 
               {gameState.result && (
                 <div className="mt-6 p-3 bg-white rounded-lg text-center animate-fade-in">
-                  <span className="font-bold text-lg">{gameState.result}</span>
+                  <span className="font-bold text-lg">
+                    {gameState.game_over ? 
+                    gameState.result : 
+                    `${gameState.result}`}
+                  </span>
                 </div>
               )}
             </div>
@@ -236,6 +312,8 @@ export default function Home() {
           </div>
         </>
       )}
+
+      {showReference && <ReferenceModal />}
     </main>
   );
 }
