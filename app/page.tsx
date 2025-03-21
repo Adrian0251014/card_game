@@ -1,4 +1,3 @@
-// page.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -71,9 +70,9 @@ export default function Home() {
 
   const ReferenceModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-xl w-full max-w-4xl">
+      <div className="bg-white p-6 rounded-xl w-full max-w-4xl text-black">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Card Reference</h2>
+          <h2 className="text-2xl font-bold text-black">Card Reference</h2>
           <button
             onClick={() => setShowReference(false)}
             className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -179,10 +178,10 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen p-4 gap-6 bg-slate-100">
+    <main className="flex min-h-screen p-4 gap-6 bg-slate-100 text-black">
       {showConfig ? (
-        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg">
-          <h2 className="text-2xl font-bold mb-6">Card Configuration</h2>
+        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg text-black">
+          <h2 className="text-2xl font-bold mb-6 text-black">Card Configuration</h2>
           <div className="space-y-4">
             {Object.keys(DEFAULT_CONFIG).map(card => (
               <div key={card} className="flex items-center justify-between">
@@ -216,9 +215,9 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <div className="flex-1 flex flex-col bg-white rounded-xl p-4 shadow-xl">
+          <div className="flex-1 flex flex-col bg-white rounded-xl p-4 shadow-xl text-black">
             <div className="flex justify-between mb-4">
-              <h2 className="text-xl font-bold">Player 1</h2>
+              <h2 className="text-xl font-bold text-black">Player 1</h2>
               <div>Cards Left: {gameState.player_a_deck.length}</div>
             </div>
             <div className="flex-1 flex flex-col items-center gap-6">
@@ -280,7 +279,7 @@ export default function Home() {
 
               {gameState.result && (
                 <div className="mt-6 p-3 bg-white rounded-lg text-center animate-fade-in">
-                  <span className="font-bold text-lg">
+                  <span className="font-bold text-lg text-black">
                     {gameState.game_over ? 
                     gameState.result : 
                     `${gameState.result}`}
@@ -290,9 +289,9 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col bg-white rounded-xl p-4 shadow-xl">
+          <div className="flex-1 flex flex-col bg-white rounded-xl p-4 shadow-xl text-black">
             <div className="flex justify-between mb-4">
-              <h2 className="text-xl font-bold">Player 2</h2>
+              <h2 className="text-xl font-bold text-black">Player 2</h2>
               <div>Cards Left: {gameState.player_b_deck.length}</div>
             </div>
             <div className="flex-1 flex flex-col items-center gap-6">
