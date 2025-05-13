@@ -23,6 +23,8 @@ interface GameState {
   }>;
   player_a_sequence: Card[];
   player_b_sequence: Card[];
+  player_a_discard: Card[];
+  player_b_discard: Card[];
 }
 
 const DEFAULT_CONFIG = {
@@ -36,18 +38,13 @@ const DEFAULT_CONFIG = {
   "monarch4": 1
 };
 
-const CARD_REFERENCE = {
-  "ladybug1": { score: 1, image: "ladybug1.png" },
-  "ladybug2": { score: 2, image: "ladybug2.png" },
-  "ladybug3": { score: 3, image: "ladybug3.png" },
-  "ladybug4": { score: 4, image: "ladybug4.png" },
-  "monarch1": { score: 1, image: "monarch1.png" },
-  "monarch2": { score: 2, image: "monarch2.png" },
-  "monarch3": { score: 3, image: "monarch3.png" },
-  "monarch4": { score: 4, image: "monarch4.png" }
-};
+const INTRODUCTION_STEPS = 4;
+const CARD_ASPECT_RATIO = 1506 / 2106;
+const REFERENCE_ASPECT_RATIO = 3602 / 1008;
 
 export default function Home() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [showIntroduction, setShowIntroduction] = useState(true);
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [gameState, setGameState] = useState<GameState>({
     player_a_deck: [],
@@ -58,45 +55,108 @@ export default function Home() {
     game_over: false,
     round_results: [],
     player_a_sequence: [],
-    player_b_sequence: []
+    player_b_sequence: [],
+    player_a_discard: [],
+    player_b_discard: []
   });
-  
+
   const [currentCards, setCurrentCards] = useState<{
     a: Card | null;
     b: Card | null;
   }>({ a: null, b: null });
-  const [showConfig, setShowConfig] = useState(true);
-  const [showReference, setShowReference] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [waitingForComparison, setWaitingForComparison] = useState(false);
+  const [showFinalResult, setShowFinalResult] = useState(false);
 
-  const ReferenceModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-xl w-full max-w-4xl text-black">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-black">Card Reference</h2>
-          <button
-            onClick={() => setShowReference(false)}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ×
-          </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Object.entries(CARD_REFERENCE).map(([name, info]) => (
-            <div key={name} className="flex flex-col items-center p-2 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-              <div className="relative w-full aspect-[3/4] max-w-[150px]">
-                <Image
-                  src={`/${info.image}`}
-                  alt={name}
-                  fill
-                  className="object-cover rounded-md"
-                />
+  const renderIntroduction = () => {
+    switch(currentStep) {
+      case 0:
+        return (
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 h-full p-4">
+            <div className="relative w-full md:w-1/2 aspect-[646/1030] max-w-[400px]">
+              <Image src="/character.png" alt="Guide" fill className="object-contain" priority />
+            </div>
+            <div className="relative bg-white p-6 rounded-3xl shadow-lg max-w-md animate-fade-in">
+              <div className="text-gray-600 space-y-4">
+                <p className="text-2xl text-black mb-4">
+                  You are going to play a card game called Circle of Life.
+                </p>
+              </div>
+              <div className="absolute -left-4 top-8 w-8 h-8 bg-white transform rotate-45"/>
+            </div>
+          </div>
+        );
+
+      case 1:
+        return (
+          <div className="h-full flex flex-col p-4">
+            <div className="flex flex-row items-start gap-4 mb-8">
+              <div className="relative w-40 h-64 ml-4">
+                <Image src="/character.png" alt="Guide" fill className="object-contain" />
+              </div>
+              <div className="relative bg-white p-6 rounded-3xl shadow-lg max-w-md animate-fade-in">
+                <p className="text-gray-600 text-justify space-y-4">
+                  This game is about animals’ life cycle. The cards that you will be using today will have images of ladybug’s and monarch butterfly’s life cycle stages.
+                  The ladybugs and monarchs go through the same life cycle stages. They start from an egg and then become a larva and then a pupa and then an adult. 
+                  This change over the life cycle is called metamorphosis.
+                </p>
+                <div className="absolute -left-4 top-8 w-8 h-8 bg-white transform rotate-45" />
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+
+            <div className="flex flex-col items-center justify-center gap-8 mt-8">
+              <div className="relative w-full max-w-[500px] aspect-[3602/1008]">
+                <Image src="/reference_MONARCH.png" alt="Monarch Reference" fill className="object-contain" />
+              </div>
+              <div className="relative w-full max-w-[500px] aspect-[3602/1008]">
+                <Image src="/reference_LADYBUG.png" alt="Ladybug Reference" fill className="object-contain" />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 h-full p-4">
+            <div className="relative w-full md:w-1/2 aspect-[646/1030] max-w-[400px]">
+              <Image src="/character.png" alt="Guide" fill className="object-contain" />
+            </div>
+            <div className="relative bg-white p-6 rounded-3xl shadow-lg max-w-xl animate-fade-in">
+              <div className="text-xl font-medium mb-4 text-center">Game Rule</div>
+              <p className="text-gray-600 text-justify space-y-4">
+                Circle of Life is similar to the classic card game called ‘war’. Both of you will get a set of cards that has different lifecycle stages of the ladybug and monarch. You will place your cards, face down, in front of you. When you are ready to play, both of you will flip the top card from your set at the same time. The player with the more advanced lifecycle stage will win the cards. If you have the same lifecycle stage cards, then you will flip just one more card to determine the winner. The winner will also take the cards of the tied round. The game will end when all the cards have been flipped. The player with the most cards at the end wins. Any questions before you start the game? Here are the cards and enjoy the game!
+              </p>
+              <div className="absolute -left-4 top-8 w-8 h-8 bg-white transform rotate-45"/>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="h-full flex flex-col p-4">
+            <div className="flex justify-between mb-8">
+              <div className="relative w-1/3 aspect-[3602/1008] max-w-[500px]">
+                <Image src="/reference_MONARCH.png" alt="Monarch Reference" fill className="object-contain" />
+              </div>
+              <div className="relative w-1/3 aspect-[3602/1008] max-w-[500px]">
+                <Image src="/reference_LADYBUG.png" alt="Ladybug Reference" fill className="object-contain" />
+              </div>
+            </div>
+            <h2 className="text-5xl font-bold text-center mb-8">Which card wins?</h2>
+            <div className="flex flex-wrap justify-center gap-8">
+              <div className="relative w-48 aspect-[1506/2106]">
+                <Image src="/monarch2.png" alt="Monarch2" fill className="object-contain" />
+              </div>
+              <div className="relative w-48 aspect-[1506/2106]">
+                <Image src="/ladybug4.png" alt="Ladybug4" fill className="object-contain" />
+              </div>
+            </div>
+          </div>
+        );
+
+      default: return null;
+    }
+  };
 
   const startNewGame = async () => {
     const res = await fetch('/api/py/new_game', {
@@ -108,53 +168,106 @@ export default function Home() {
     
     setGameState({
       ...data,
+      player_a_discard: [],
+      player_b_discard: [],
       result: '',
       round_results: []
     });
     setCurrentCards({ a: null, b: null });
     setShowConfig(false);
+    setShowFinalResult(false);
   };
 
-  const playRound = async () => {
-    const res = await fetch('/api/py/play_round', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(gameState)
-    });
+  const handlePlayCard = async (player: 'a' | 'b') => {
+    if (gameState.game_over || currentCards[player]) return;
+
+    const currentDeck = player === 'a' 
+      ? [...gameState.player_a_deck] 
+      : [...gameState.player_b_deck];
     
-    const { new_a_deck, new_b_deck, round_result, used_card_a, used_card_b, all_cards_used } = await res.json();
-    
-    setCurrentCards({
-      a: used_card_a,
-      b: used_card_b
+    if (currentDeck.length === 0) return;
+
+    const cardIndex = Math.floor(Math.random() * currentDeck.length);
+    const usedCard = currentDeck[cardIndex];
+    const newDeck = currentDeck.filter((_, i) => i !== cardIndex);
+
+    setCurrentCards(prev => ({ ...prev, [player]: usedCard }));
+
+    setGameState(prev => player === 'a' ? {
+      ...prev,
+      player_a_deck: newDeck,
+      player_a_sequence: [...prev.player_a_sequence, usedCard]
+    } : {
+      ...prev,
+      player_b_deck: newDeck,
+      player_b_sequence: [...prev.player_b_sequence, usedCard]
     });
 
-    let newState = {
-      ...gameState,
-      player_a_deck: new_a_deck,
-      player_b_deck: new_b_deck,
-      player_a_score: round_result?.winner === 'A' ? gameState.player_a_score + 1 : gameState.player_a_score,
-      player_b_score: round_result?.winner === 'B' ? gameState.player_b_score + 1 : gameState.player_b_score,
-      round_results: [...gameState.round_results, round_result],
-      game_over: all_cards_used,
-      result: round_result?.result || gameState.result,
-      player_a_sequence: [...gameState.player_a_sequence, used_card_a],
-      player_b_sequence: [...gameState.player_b_sequence, used_card_b]
-    };
+    setWaitingForComparison(true);
+  };
 
-    if (all_cards_used) {
-      const finalRes = await fetch('/api/py/end_game', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newState)
-      });
-      const finalData = await finalRes.json();
-      newState.result = finalData.result;
-      newState.game_over = true;
+  useEffect(() => {
+    if (waitingForComparison && currentCards.a && currentCards.b) {
+      const compareCards = async () => {
+        const res = await fetch('/api/py/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            card_a: currentCards.a,
+            card_b: currentCards.b
+          })
+        });
+        
+        const result = await res.json();
+        const cardA = currentCards.a;
+        const cardB = currentCards.b;
+        
+        setGameState(prev => {
+          const newState = {
+            ...prev,
+            player_a_score: result.winner === 'A' ? prev.player_a_score + 1 : prev.player_a_score,
+            player_b_score: result.winner === 'B' ? prev.player_b_score + 1 : prev.player_b_score,
+            round_results: [...prev.round_results, result],
+            result: result.result,
+          };
+
+          const isFinalRound = newState.player_a_deck.length === 0 && 
+            newState.player_b_deck.length === 0;
+
+          if (isFinalRound) {
+            setTimeout(async () => {
+              const finalRes = await fetch('/api/py/end_game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newState)
+              });
+              const finalData = await finalRes.json();
+              setShowFinalResult(true);
+              setGameState(prev => ({
+                ...prev,
+                result: finalData.result,
+                game_over: true
+              }));
+            }, 1500);
+          }
+
+          return newState;
+        });
+
+        setTimeout(() => {
+          setCurrentCards({ a: null, b: null });
+          setGameState(prev => ({
+            ...prev,
+            player_a_discard: [...prev.player_a_discard, cardA!],
+            player_b_discard: [...prev.player_b_discard, cardB!]
+          }));
+          setWaitingForComparison(false);
+        }, 1500);
+      };
+
+      compareCards();
     }
-
-    setGameState(newState);
-  };
+  }, [waitingForComparison, currentCards]);
 
   const endGame = async () => {
     const res = await fetch('/api/py/end_game', {
@@ -168,6 +281,7 @@ export default function Home() {
       game_over: true,
       result: data.result
     }));
+    setShowFinalResult(true);
   };
 
   const updateConfig = (card: string, value: number) => {
@@ -177,11 +291,115 @@ export default function Home() {
     }));
   };
 
+  const renderGameResult = () => {
+    if (!gameState.result) return null;
+
+    return (
+      <div className="mt-4 p-3 bg-white rounded-lg text-center animate-fade-in shadow-md">
+        {showFinalResult ? (
+          <div className="p-4">
+            <div className="text-2xl font-bold text-emerald-600 mb-2">🏆 Final Result 🏆</div>
+            <div className="text-xl">{gameState.result}</div>
+            <div className="text-3xl mt-3">
+              <span className="text-blue-600">{gameState.player_a_score}</span>
+              <span className="mx-3">:</span>
+              <span className="text-red-600">{gameState.player_b_score}</span>
+            </div>
+          </div>
+        ) : (
+          <span className="font-bold text-lg">
+            {gameState.game_over ? gameState.result : `Round Result: ${gameState.result}`}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const DiscardPile = ({ cards, isRight, position }: { 
+    cards: Card[]; 
+    isRight?: boolean;
+    position: 'left' | 'right'; 
+  }) => (
+    <div 
+      className={`absolute ${position === 'left' ? 'left-1/4' : 'left-3/4'} top-1/2 transform -translate-y-1/2 z-10`}
+      style={{ 
+        height: '12rem',
+        width: `${CARD_ASPECT_RATIO * 12}rem`,
+        perspective: '1000px'
+      }}
+    >
+      {cards.map((card, index) => (
+        <div
+          key={`${card.image}-${index}`}
+          className="absolute top-0 left-0 w-full h-full transition-all duration-300 hover:z-50 hover:scale-105"
+          style={{ 
+            transform: `translate(${index * 8}px, ${index * 4}px)
+                       rotateZ(${(index % 2 === 0 ? -2 : 2)}deg)`,
+            zIndex: index
+          }}
+        >
+          <Image
+            src={`/${card.image}`}
+            alt={card.insect}
+            fill
+            className={`object-cover rounded-lg shadow-lg border-2 border-white ${
+              isRight ? 'rotate-180' : ''
+            }`}
+          />
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <main className="flex min-h-screen p-4 gap-6 bg-slate-100 text-black">
-      {showConfig ? (
-        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg text-black">
-          <h2 className="text-2xl font-bold mb-6 text-black">Card Configuration</h2>
+    <main className="flex min-h-screen flex-col p-4 gap-4 bg-white">
+      <h1 className="text-3xl md:text-4xl font-bold text-center text-black mb-6 mt-4">
+        Relational Reasoning Card Game
+      </h1>
+
+      {showIntroduction ? (
+        <div className="flex-1 flex flex-col items-center justify-between">
+          <div className="flex-1 w-full max-w-6xl py-8">{renderIntroduction()}</div>
+          <div className="flex gap-4 mt-8">
+            {currentStep > 0 && (
+              <button 
+                onClick={() => setCurrentStep(p => p - 1)}
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Return
+              </button>
+            )}
+            {currentStep < INTRODUCTION_STEPS - 1 ? (
+              <button 
+                onClick={() => setCurrentStep(p => p + 1)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Next
+              </button>
+            ) : (
+              <button 
+                onClick={() => { 
+                  setShowIntroduction(false); 
+                  setShowConfig(true); 
+                }}
+                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                Card Configuration
+              </button>
+            )}
+          </div>
+        </div>
+      ) : showConfig ? (
+        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">Card Configuration</h2>
+            <button
+              onClick={() => setShowIntroduction(true)}
+              className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg"
+            >
+              Back to Introduction
+            </button>
+          </div>
           <div className="space-y-4">
             {Object.keys(DEFAULT_CONFIG).map(card => (
               <div key={card} className="flex items-center justify-between">
@@ -215,20 +433,61 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <div className="flex-1 flex flex-col bg-white rounded-xl p-4 shadow-xl text-black">
-            <div className="flex justify-between mb-4">
-              <h2 className="text-xl font-bold text-black">Player 1</h2>
-              <div>Cards Left: {gameState.player_a_deck.length}</div>
+          <div className="w-full p-4 mb-4">
+            <div className="flex justify-between gap-4 h-32">
+              <div className="relative flex-1" style={{ aspectRatio: REFERENCE_ASPECT_RATIO }}>
+                <Image src="/reference_MONARCH.png" alt="Monarch Reference" fill className="object-contain" />
+              </div>
+              <div className="relative flex-1" style={{ aspectRatio: REFERENCE_ASPECT_RATIO }}>
+                <Image src="/reference_LADYBUG.png" alt="Ladybug Reference" fill className="object-contain" />
+              </div>
             </div>
-            <div className="flex-1 flex flex-col items-center gap-6">
-              <div className="w-48 h-72 border-2 border-dashed border-slate-400 rounded-lg flex items-center justify-center">
+          </div>
+
+          {/* Player 1 Section */}
+          <div className="flex-1 rounded-xl p-4 bg-gray-50 relative">
+            <div className="absolute bottom-4 right-4 transform rotate-180">
+              <h2 className="text-xl font-bold">Player1</h2>
+            </div>
+            <div className="absolute bottom-4 left-4 transform rotate-180">
+              <div className="font-semibold">Cards Left: {gameState.player_a_deck.length}</div>
+            </div>
+
+            <DiscardPile 
+              cards={gameState.player_a_discard} 
+              isRight 
+              position="right"
+            />
+
+            <div className="flex items-center justify-center gap-8">
+              <div 
+                className={`relative rounded-lg transition-colors ${
+                  gameState.player_a_deck.length > 0 
+                    ? 'cursor-pointer hover:bg-gray-100' 
+                    : 'bg-gray-100'
+                }`}
+                style={{ height: '12rem', width: `${CARD_ASPECT_RATIO * 12}rem` }}
+                onClick={() => handlePlayCard('a')}
+              >
+                {gameState.player_a_deck.length > 0 && (
+                  <Image 
+                    src="/back.png" 
+                    alt="card back" 
+                    fill
+                    className={`object-cover rounded-lg opacity-75 rotate-180 ${
+                      !currentCards.a ? 'animate-pulse' : ''
+                    }`}
+                  />
+                )}
+              </div>
+              <div className="relative" style={{ height: '12rem', width: `${CARD_ASPECT_RATIO * 12}rem` }}>
                 {currentCards.a && (
                   <div className="relative w-full h-full animate-card-flip">
                     <Image
                       src={`/${currentCards.a.image}`}
                       alt={currentCards.a.insect}
                       fill
-                      className="object-cover rounded-lg"
+                      className="object-cover rounded-lg shadow-md"
                     />
                   </div>
                 )}
@@ -236,83 +495,85 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="w-72 flex flex-col gap-4 justify-center">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-6">
-                {gameState.player_a_score} : {gameState.player_b_score}
-              </div>
-              
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={playRound}
-                  disabled={gameState.game_over}
-                  className="py-3 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {gameState.game_over ? 'Game Over' : 'Play Round'}
-                </button>
-                
-                <button
-                  onClick={endGame}
-                  disabled={gameState.game_over}
-                  className="py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                >
-                  End Game Early
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowConfig(true);
-                    setCurrentCards({ a: null, b: null });
-                  }}
-                  className="py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                >
-                  Reconfigure
-                </button>
-
-                <button
-                  onClick={() => setShowReference(true)}
-                  className="py-2 px-4 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-                >
-                  Show Reference
-                </button>
-              </div>
-
-              {gameState.result && (
-                <div className="mt-6 p-3 bg-white rounded-lg text-center animate-fade-in">
-                  <span className="font-bold text-lg text-black">
-                    {gameState.game_over ? 
-                    gameState.result : 
-                    `${gameState.result}`}
-                  </span>
-                </div>
-              )}
+          {/* Control Center */}
+          <div className="flex flex-col items-center gap-4 my-4">
+            <div className="text-4xl font-bold text-blue-600">
+              {gameState.player_a_score} : {gameState.player_b_score}
             </div>
+            
+            <div className="flex flex-wrap gap-4 justify-center">
+              <button
+                onClick={endGame}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                End Game
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfig(true);
+                  setCurrentCards({ a: null, b: null });
+                  setShowFinalResult(false);
+                }}
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Reconfigure
+              </button>
+            </div>
+
+            {renderGameResult()}
           </div>
 
-          <div className="flex-1 flex flex-col bg-white rounded-xl p-4 shadow-xl text-black">
+          {/* Player 2 Section */}
+          <div className="flex-1 rounded-xl p-4 bg-gray-50 relative">
             <div className="flex justify-between mb-4">
-              <h2 className="text-xl font-bold text-black">Player 2</h2>
-              <div>Cards Left: {gameState.player_b_deck.length}</div>
+              <h2 className="text-xl font-bold">Player2</h2>
+              <div className="flex gap-4">
+                <div className="font-semibold">Cards Left: {gameState.player_b_deck.length}</div>
+              </div>
             </div>
-            <div className="flex-1 flex flex-col items-center gap-6">
-              <div className="w-48 h-72 border-2 border-dashed border-slate-400 rounded-lg flex items-center justify-center">
+
+            <DiscardPile 
+              cards={gameState.player_b_discard}
+              position="left"
+            />
+
+            <div className="flex items-center justify-center gap-8">
+              <div className="relative" style={{ height: '12rem', width: `${CARD_ASPECT_RATIO * 12}rem` }}>
                 {currentCards.b && (
                   <div className="relative w-full h-full animate-card-flip">
                     <Image
                       src={`/${currentCards.b.image}`}
                       alt={currentCards.b.insect}
                       fill
-                      className="object-cover rounded-lg"
+                      className="object-cover rounded-lg shadow-md"
                     />
                   </div>
+                )}
+              </div>
+              <div 
+                className={`relative rounded-lg transition-colors ${
+                  gameState.player_b_deck.length > 0 
+                    ? 'cursor-pointer hover:bg-gray-100' 
+                    : 'bg-gray-100'
+                }`}
+                style={{ height: '12rem', width: `${CARD_ASPECT_RATIO * 12}rem` }}
+                onClick={() => handlePlayCard('b')}
+              >
+                {gameState.player_b_deck.length > 0 && (
+                  <Image 
+                    src="/back.png" 
+                    alt="card back" 
+                    fill
+                    className={`object-cover rounded-lg opacity-75 ${
+                      !currentCards.b ? 'animate-pulse' : ''
+                    }`}
+                  />
                 )}
               </div>
             </div>
           </div>
         </>
       )}
-
-      {showReference && <ReferenceModal />}
     </main>
   );
 }
