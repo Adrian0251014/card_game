@@ -72,56 +72,61 @@ export default function Home() {
     switch(currentStep) {
       case 0:
         return (
-          <div className="h-full flex flex-col items-center justify-center p-8">
-            <div className="flex flex-col md:flex-row items-center gap-8 w-full max-w-6xl">
-              <div className="relative w-64 h-64 md:w-96 md:h-96">
-                <img 
-                  src="/character.png" 
-                  alt="Guide" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="relative bg-white p-8 rounded-3xl shadow-xl max-w-2xl w-full text-center">
-                <p className="text-2xl md:text-3xl text-gray-800 leading-relaxed">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 h-full p-4">
+            <div className="relative md:w-1/2 aspect-[646/1030] max-w-[300px]">
+              <img 
+                src="/character.png" 
+                alt="Guide" 
+                height="800px"
+                className="object-contain"
+              />
+            </div>
+            <div className="relative bg-white p-6 rounded-3xl shadow-lg max-w-md w-full">
+              <div className="text-gray-600 space-y-4">
+                <p className="text-2xl text-black mb-4">
                   You are going to play a card game called Circle of Life.
                 </p>
-                <div className="absolute -left-6 top-12 w-12 h-12 bg-white transform rotate-45" />
               </div>
+              <div className="absolute -left-4 top-8 w-8 h-8 bg-white transform rotate-45"/>
             </div>
           </div>
         );
 
       case 1:
         return (
-          <div className="h-full flex flex-col items-center justify-center p-8">
-            <div className="flex flex-col md:flex-row items-center gap-8 w-full max-w-6xl mb-12">
-              <div className="relative w-48 h-48">
-                <img src="/character.png" alt="Guide" className="w-full h-full object-contain" />
+          <div className="h-full flex flex-col p-4">
+            <div className="flex flex-col md:flex-row items-start gap-4 mb-8">
+              <div className="relative w-full md:w-1/3 aspect-[646/1030] max-w-[200px]">
+                <img 
+                  src="/character.png" 
+                  alt="Guide" 
+                  height="300px"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <div className="bg-white p-8 rounded-3xl shadow-xl max-w-3xl w-full text-center">
-                <p className="text-xl text-gray-700 leading-relaxed">
-                  This game is about animals' life cycle. The cards show different stages of 
-                  ladybugs and monarch butterflies. Both go through four stages: egg, larva, 
-                  pupa and adult. This transformation is called metamorphosis.
+              <div className="relative bg-white p-6 rounded-3xl shadow-lg max-w-md flex-1">
+                <p className="text-gray-600 text-justify">
+                  This game is about animals' life cycle. The cards that you will be using today will have images of ladybug's and monarch butterfly's life cycle stages. The ladybugs and monarchs go through the same life cycle stages. They start from an egg and then become a larva and then a pupa and then an adult. This change over the life cycle is called metamorphosis.
                 </p>
+                <div className="absolute -left-4 top-8 w-8 h-8 bg-white transform rotate-45"/>
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl justify-center">
-              <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-[500px] text-center">
-                <h3 className="text-2xl font-bold mb-4">Monarch Life Cycle</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 px-4">
+              <div className="relative w-full aspect-[3602/1008] max-w-[500px] mx-auto">
                 <img 
                   src="/reference_MONARCH.png" 
-                  alt="Monarch" 
-                  className="w-full h-auto mx-auto"
+                  alt="Monarch Reference" 
+                  height="100px"
+                  className="w-full h-full object-contain"
                 />
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-[500px] text-center">
-                <h3 className="text-2xl font-bold mb-4">Ladybug Life Cycle</h3>
+              <div className="relative w-full aspect-[3602/1008] max-w-[500px] mx-auto">
                 <img 
                   src="/reference_LADYBUG.png" 
-                  alt="Ladybug" 
-                  className="w-full h-auto mx-auto"
+                  alt="Ladybug Reference" 
+                  height="100px"
+                  className="w-full h-full object-contain"
                 />
               </div>
             </div>
@@ -130,41 +135,63 @@ export default function Home() {
 
       case 2:
         return (
-          <div className="h-full flex flex-col md:flex-row items-center justify-center gap-12 p-8">
-            <div className="relative w-64 h-64">
-              <img src="/character.png" alt="Guide" className="w-full h-full object-contain" />
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 h-full p-4">
+            <div className="relative w-full md:w-1/2 aspect-[646/1030] max-w-[300px]">
+              <img 
+                src="/character.png" 
+                alt="Guide" 
+                height="300px"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <div className="bg-white p-8 rounded-3xl shadow-xl max-w-3xl w-full text-center">
-              <h2 className="text-3xl font-bold mb-6">Game Rules</h2>
-              <div className="space-y-4 text-lg text-gray-700">
-                <p>• Each player starts with a shuffled deck</p>
-                <p>• Simultaneously flip top cards</p>
-                <p>• Higher life stage wins the round</p>
-                <p>• Tie? Flip one more card to decide</p>
-                <p>• Collect all cards to win</p>
-              </div>
+            <div className="relative bg-white p-6 rounded-3xl shadow-lg max-w-xl h-[60vh] overflow-y-auto">
+              <div className="text-xl font-medium mb-4 text-center">Game Rule</div>
+              <p className="text-gray-600 text-justify space-y-4">
+                Circle of Life is similar to the classic card game called 'war'. Both of you will get a set of cards that has different lifecycle stages of the ladybug and monarch. You will place your cards, face down, in front of you. When you are ready to play, both of you will flip the top card from your set at the same time. The player with the more advanced lifecycle stage will win the cards. If you have the same lifecycle stage cards, then you will flip just one more card to determine the winner. The winner will also take the cards of the tied round. The game will end when all the cards have been flipped. The player with the most cards at the end wins. Any questions before you start the game? Here are the cards and enjoy the game!
+              </p>
+              <div className="absolute -left-4 top-8 w-8 h-8 bg-white transform rotate-45"/>
             </div>
           </div>
         );
 
       case 3:
         return (
-          <div className="h-full flex flex-col items-center justify-center p-8">
-            <h2 className="text-4xl font-bold text-center mb-12">Which card wins?</h2>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-16">
-              <div className="bg-white p-6 rounded-2xl shadow-xl border-4 border-yellow-400 text-center">
+          <div className="h-full flex flex-col items-center p-4">
+            <div className="flex flex-col md:flex-row justify-center gap-8 w-full mb-8">
+              <div className="relative w-full md:w-1/2 aspect-[3602/1008] max-w-[400px]">
                 <img 
-                  src="/monarch2.png" 
-                  alt="Monarch" 
-                  className="w-64 h-96 object-contain mx-auto"
+                  src="/reference_MONARCH.png" 
+                  alt="Monarch Reference" 
+                  height="100px"
+                  className="w-full h-full object-contain"
                 />
               </div>
-              <div className="text-4xl font-bold text-red-600">VS</div>
-              <div className="bg-white p-6 rounded-2xl shadow-xl border-4 border-blue-400 text-center">
+              <div className="relative w-full md:w-1/2 aspect-[3602/1008] max-w-[400px]">
+                <img 
+                  src="/reference_LADYBUG.png" 
+                  alt="Ladybug Reference" 
+                  height="100px"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">Which card wins?</h2>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full">
+              <div className="relative w-1/3 aspect-[1506/2106] max-w-[200px]">
+                <img 
+                  src="/monarch2.png" 
+                  alt="Monarch2" 
+                  height="300px"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="text-2xl font-bold">VS</div>
+              <div className="relative w-1/3 aspect-[1506/2106] max-w-[200px]">
                 <img 
                   src="/ladybug4.png" 
-                  alt="Ladybug" 
-                  className="w-64 h-96 object-contain mx-auto"
+                  alt="Ladybug4" 
+                  height="300px"
+                  className="w-full h-full object-contain"
                 />
               </div>
             </div>
